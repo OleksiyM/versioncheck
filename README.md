@@ -11,6 +11,18 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 - **Smart Parsing:** Uses regex to extract clean version numbers directly from standard terminal output commands and GitHub tags.
 - **Compact & Visual:** Employs emojis and ANSI colors to highlight what actually requires your attention.
 
+## Example Output
+
+```text
+🔍 Checking software versions...
+---------------------------------------------
+✔️  Qwen         : 0.14.5 (Up to date)
+❌ OpenClaw     : Command not found (openclaw)
+🚀 Gemini CLI   : 0.36.0 -> 0.38.2 (Update!)
+🚀 Claude Code  : 2.1.104 -> 2.1.114 (Update!)
+---------------------------------------------
+```
+
 ## Quickstart
 
 ### Prerequisites

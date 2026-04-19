@@ -16,7 +16,7 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ```text
 🔍 Checking software versions...
 ---------------------------------------------
-✔️  Qwen         : 0.14.5 (Up to date)
+✔️ Qwen         : 0.14.5 (Up to date)
 ❌ OpenClaw     : Command not found (openclaw)
 🚀 Gemini CLI   : 0.36.0 -> 0.38.2 (Update!)
 🚀 Claude Code  : 2.1.104 -> 2.1.114 (Update!)

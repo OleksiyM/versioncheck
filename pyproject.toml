@@ -1,0 +1,13 @@
+[project]
+name = "versioncheck"
+version = "0.1.0"
+description = "A compact and elegant script to compare local CLI tool versions against the latest GitHub releases."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "requests",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

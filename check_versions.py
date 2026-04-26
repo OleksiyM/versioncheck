@@ -15,7 +15,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 
-# Maximum execution time for commands and network requests
+# Maximum execution time for shell commands and network requests (GitHub API)
 TIMEOUT_SECONDS = 10
 
 class Colors:

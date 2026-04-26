@@ -24,6 +24,10 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ---------------------------------------------
 ```
 
+## Installation
+
+Download the latest stable release from the [GitHub Releases page](https://github.com/OleksiyM/versioncheck/releases). Extract the archive, and you are ready to go!
+
 ## Quickstart
 
 ### Prerequisites

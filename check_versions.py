@@ -18,6 +18,42 @@ from typing import Optional
 # Maximum execution time for shell commands and network requests (GitHub API)
 TIMEOUT_SECONDS = 10
 
+# Logging setup
+LOG_DIR = Path(__file__).parent / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+LOG_FILE = LOG_DIR / "versioncheck.log"
+
+def strip_ansi(text: str) -> str:
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
+
+def cprint(msg: str, end: str = "\n"):
+    """Prints to console and logs to file with timestamp."""
+    print(msg, end=end)
+    clean_msg = strip_ansi(msg)
+    timestamp = time.strftime("[%Y-%m-%d %H:%M:%S]")
+    
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        if clean_msg.strip():
+            for line in clean_msg.splitlines():
+                f.write(f"{timestamp} {line}\n")
+        else:
+            f.write(f"{clean_msg}{end}")
+
+def run_and_log_subprocess(cmd: str):
+    """Runs a shell command, prints output in real-time, and logs it."""
+    process = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
+    for line in process.stdout:
+        print(line, end="")
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('[%Y-%m-%d %H:%M:%S]')} [CMD] {strip_ansi(line)}")
+    
+    process.wait()
+    if process.returncode != 0:
+        raise subprocess.CalledProcessError(process.returncode, cmd)
+
 class Colors:
     GRAY = "\033[90m"
     GREEN = "\033[92m"
@@ -114,17 +150,17 @@ def get_local_version(app: AppConfig) -> Optional[str]:
         if match:
             return match.group(1)
         else:
-            print(f"❌ {app.name:<12} : Local version parse error")
+            cprint(f"❌ {app.name:<12} : Local version parse error")
             return None
             
     except FileNotFoundError:
-        print(f"❌ {app.name:<12} : Command not found ({app.command[0]})")
+        cprint(f"❌ {app.name:<12} : Command not found ({app.command[0]})")
         return None
     except subprocess.TimeoutExpired:
-        print(f"❌ {app.name:<12} : Local check timeout")
+        cprint(f"❌ {app.name:<12} : Local check timeout")
         return None
     except Exception as e:
-        print(f"❌ {app.name:<12} : Local check failed")
+        cprint(f"❌ {app.name:<12} : Local check failed")
         return None
 
 def get_github_version(app: AppConfig) -> Optional[str]:
@@ -139,7 +175,7 @@ def get_github_version(app: AppConfig) -> Optional[str]:
         response = requests.get(url, headers=headers, timeout=TIMEOUT_SECONDS)
         
         if response.status_code == 404:
-            print(f"❌ {app.name:<12} : GitHub repo not found")
+            cprint(f"❌ {app.name:<12} : GitHub repo not found")
             return None
             
         response.raise_for_status()
@@ -151,14 +187,14 @@ def get_github_version(app: AppConfig) -> Optional[str]:
         if match:
             return match.group(1)
         else:
-            print(f"❌ {app.name:<12} : GitHub version parse error")
+            cprint(f"❌ {app.name:<12} : GitHub version parse error")
             return None
             
     except requests.exceptions.Timeout:
-        print(f"❌ {app.name:<12} : GitHub API timeout")
+        cprint(f"❌ {app.name:<12} : GitHub API timeout")
         return None
     except requests.exceptions.RequestException as e:
-        print(f"❌ {app.name:<12} : GitHub API request failed")
+        cprint(f"❌ {app.name:<12} : GitHub API request failed")
         return None
 
 def main():
@@ -170,7 +206,7 @@ def main():
     parser.add_argument("-y", "--yes", action="store_true", help="Auto-approve all updates without prompting")
     args = parser.parse_args()
 
-    print(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*45}{Colors.RESET}")
+    cprint(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*45}{Colors.RESET}")
     
     # Store apps that have updates as a list of dicts
     updates = []
@@ -187,22 +223,22 @@ def main():
             
         if local_version == github_version:
             # Gray text for up-to-date
-            print(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
+            cprint(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
         else:
             if app.ignore_update:
                 # Show the update exists, but mark as ignored and skip further actions
-                print(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
+                cprint(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
                 continue
                 
             # Green text for new available version
-            print(f"🚀 {app.name:<12} : {local_version} -> {Colors.GREEN}{github_version} (Update!){Colors.RESET}")
+            cprint(f"🚀 {app.name:<12} : {local_version} -> {Colors.GREEN}{github_version} (Update!){Colors.RESET}")
             updates.append({
                 "app": app,
                 "local": local_version,
                 "github": github_version
             })
 
-    print(f"{Colors.GRAY}{'-' * 45}{Colors.RESET}\n")
+    cprint(f"{Colors.GRAY}{'-' * 45}{Colors.RESET}\n")
 
     # Prompt to update apps that have auto_update enabled
     for info in updates:
@@ -213,18 +249,21 @@ def main():
             else:
                 # Default Yes on Enter
                 ans = input(f"Update {app.name}? [Y/n]: ").strip().lower()
+                # Log the user's input so it is recorded
+                with open(LOG_FILE, "a", encoding="utf-8") as f:
+                    f.write(f"{time.strftime('[%Y-%m-%d %H:%M:%S]')} Update {app.name}? [Y/n]: {ans}\n")
                 
             if ans in ('', 'y', 'yes'):
-                print(f"⚙️  Updating {app.name}...")
+                cprint(f"⚙️  Updating {app.name}...")
                 try:
                     start_time = time.time()
-                    subprocess.run(app.update_cmd, shell=True, check=True)
+                    run_and_log_subprocess(app.update_cmd)
                     duration = int(time.time() - start_time)
-                    print(f"✅ {Colors.GREEN}Successfully updated {app.name} in {duration} sec!{Colors.RESET}\n")
+                    cprint(f"✅ {Colors.GREEN}Successfully updated {app.name} in {duration} sec!{Colors.RESET}\n")
                 except subprocess.CalledProcessError:
-                    print(f"❌ {Colors.RED}Failed to update {app.name}.{Colors.RESET}\n")
+                    cprint(f"❌ {Colors.RED}Failed to update {app.name}.{Colors.RESET}\n")
             else:
-                print(f"⏩ Update for {app.name} skipped.\n")
+                cprint(f"⏩ Update for {app.name} skipped.\n")
 
     # Display custom messages for applications that require manual intervention
     for info in updates:
@@ -234,11 +273,11 @@ def main():
 
 Проверь что нового, есть ли блокеры все как обычно, если всё спокойно обнови {app.name}, если что-то тебя насторожило - не обновляй и расскажи что"""
             
-            print(f"{Colors.YELLOW}💡 Message for Eva (copy this):{Colors.RESET}")
-            print(f"{Colors.BLUE}╭{'─'*60}╮{Colors.RESET}")
+            cprint(f"{Colors.YELLOW}💡 Message for Eva (copy this):{Colors.RESET}")
+            cprint(f"{Colors.BLUE}╭{'─'*60}╮{Colors.RESET}")
             for line in msg.split('\n'):
-                print(f"{Colors.BLUE}│{Colors.RESET} {line:<58} {Colors.BLUE}│{Colors.RESET}")
-            print(f"{Colors.BLUE}╰{'─'*60}╯{Colors.RESET}\n")
+                cprint(f"{Colors.BLUE}│{Colors.RESET} {line:<58} {Colors.BLUE}│{Colors.RESET}")
+            cprint(f"{Colors.BLUE}╰{'─'*60}╯{Colors.RESET}\n")
 
 if __name__ == "__main__":
     main()

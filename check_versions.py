@@ -8,6 +8,9 @@
 import subprocess
 import requests
 import re
+import argparse
+import tomllib
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 
@@ -22,6 +25,18 @@ class Colors:
     RED = "\033[91m"
     RESET = "\033[0m"
     BOLD = "\033[1m"
+
+def get_script_version() -> str:
+    """Reads the script version dynamically from pyproject.toml."""
+    try:
+        pyproject_path = Path(__file__).parent / "pyproject.toml"
+        if pyproject_path.exists():
+            with open(pyproject_path, "rb") as f:
+                data = tomllib.load(f)
+                return data.get("project", {}).get("version", "unknown")
+    except Exception:
+        pass
+    return "unknown"
 
 @dataclass
 class AppConfig:
@@ -139,6 +154,14 @@ def get_github_version(app: AppConfig) -> Optional[str]:
         return None
 
 def main():
+    script_version = get_script_version()
+    parser = argparse.ArgumentParser(
+        description="A compact and elegant script to compare local CLI tool versions against the latest GitHub releases."
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {script_version}")
+    parser.add_argument("-y", "--yes", action="store_true", help="Auto-approve all updates without prompting")
+    args = parser.parse_args()
+
     print(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*45}{Colors.RESET}")
     
     # Store apps that have updates as a list of dicts
@@ -177,8 +200,12 @@ def main():
     for info in updates:
         app = info["app"]
         if app.auto_update and app.update_cmd:
-            # Default Yes on Enter
-            ans = input(f"Update {app.name}? [Y/n]: ").strip().lower()
+            if args.yes:
+                ans = 'y'
+            else:
+                # Default Yes on Enter
+                ans = input(f"Update {app.name}? [Y/n]: ").strip().lower()
+                
             if ans in ('', 'y', 'yes'):
                 print(f"⚙️  Updating {app.name}...")
                 try:

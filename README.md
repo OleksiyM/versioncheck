@@ -28,10 +28,17 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ### Prerequisites
 Make sure you have [uv](https://docs.astral.sh/uv/) installed.
 
-### Local Execution
+### Usage
+
+Run the script normally:
 ```bash
 uv run check_versions.py
 ```
+
+**Command-line Arguments:**
+- `-h`, `--help`: Show the help message and exit.
+- `--version`: Display the current script version (dynamically read from `pyproject.toml`).
+- `-y`, `--yes`: Auto-approve all pending updates without prompting `[Y/n]`. Example: `uv run check_versions.py -y`
 
 ### Remote Execution (via SSH)
 Execute the script entirely in RAM on your remote machine:

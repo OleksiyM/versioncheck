@@ -14,6 +14,15 @@ from typing import Optional
 # Maximum execution time for commands and network requests
 TIMEOUT_SECONDS = 10
 
+class Colors:
+    GRAY = "\033[90m"
+    GREEN = "\033[92m"
+    BLUE = "\033[94m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+
 @dataclass
 class AppConfig:
     """Configuration for an application to check."""
@@ -22,18 +31,26 @@ class AppConfig:
     github_repo: str
     # Regex to extract the version number (e.g., matching "0.14.5" from "v0.14.5")
     version_regex: str = r"(\d+\.\d+(?:\.\d+[a-zA-Z0-9\-]*)?)"
+    
+    # Update logic settings
+    ignore_update: bool = False     # If True, ignore updates for this app
+    auto_update: bool = False       # If True, prompt to run the update command
+    update_cmd: str = ""            # Command to run for updating the app
+    show_message: bool = False      # If True, show the prepared message for Eva
 
 # List of applications to monitor. You can easily expand this list.
 APPS = [
     AppConfig(
         name="Qwen",
         command=["qwen", "--version"],
-        github_repo="QwenLM/qwen-code"
+        github_repo="QwenLM/qwen-code",
+        ignore_update=True
     ),
     AppConfig(
         name="OpenClaw",
         command=["openclaw", "--version"],
-        github_repo="openclaw/openclaw"
+        github_repo="openclaw/openclaw",
+        show_message=True
     ),
     AppConfig(
         name="Gemini CLI",
@@ -43,12 +60,16 @@ APPS = [
     AppConfig(
         name="Codex",
         command=["codex", "--version"],
-        github_repo="openai/codex"
+        github_repo="openai/codex",
+        auto_update=True,
+        update_cmd="npm install -g @openai/codex"
     ),
     AppConfig(
         name="Claude Code",
         command=["claude", "--version"],
-        github_repo="anthropics/claude-code"
+        github_repo="anthropics/claude-code",
+        auto_update=True,
+        update_cmd="claude update"
     ),
 ]
 
@@ -118,7 +139,10 @@ def get_github_version(app: AppConfig) -> Optional[str]:
         return None
 
 def main():
-    print("\n🔍 Checking software versions...\n" + "-"*45)
+    print(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*45}{Colors.RESET}")
+    
+    # Store apps that have updates as a list of dicts
+    updates = []
     
     for app in APPS:
         local_version = get_local_version(app)
@@ -132,12 +156,52 @@ def main():
             
         if local_version == github_version:
             # Gray text for up-to-date
-            print(f"✔️  {app.name:<12} : \033[90m{local_version} (Up to date)\033[0m")
+            print(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
         else:
+            if app.ignore_update:
+                # Show the update exists, but mark as ignored and skip further actions
+                print(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
+                continue
+                
             # Green text for new available version
-            print(f"🚀 {app.name:<12} : {local_version} -> \033[92m{github_version} (Update!)\033[0m")
+            print(f"🚀 {app.name:<12} : {local_version} -> {Colors.GREEN}{github_version} (Update!){Colors.RESET}")
+            updates.append({
+                "app": app,
+                "local": local_version,
+                "github": github_version
+            })
 
-    print("-"*45 + "\n")
+    print(f"{Colors.GRAY}{'-' * 45}{Colors.RESET}\n")
+
+    # Prompt to update apps that have auto_update enabled
+    for info in updates:
+        app = info["app"]
+        if app.auto_update and app.update_cmd:
+            # Default Yes on Enter
+            ans = input(f"Update {app.name}? [Y/n]: ").strip().lower()
+            if ans in ('', 'y', 'yes'):
+                print(f"⚙️  Updating {app.name}...")
+                try:
+                    subprocess.run(app.update_cmd, shell=True, check=True)
+                    print(f"✅ {Colors.GREEN}Successfully updated {app.name}!{Colors.RESET}\n")
+                except subprocess.CalledProcessError:
+                    print(f"❌ {Colors.RED}Failed to update {app.name}.{Colors.RESET}\n")
+            else:
+                print(f"⏩ Update for {app.name} skipped.\n")
+
+    # Display custom messages for applications that require manual intervention
+    for info in updates:
+        app = info["app"]
+        if app.show_message:
+            msg = f"""Эва, у {app.name} обновление: {info['local']} -> {info['github']}.
+
+Проверь что нового, есть ли блокеры все как обычно, если всё спокойно обнови {app.name}, если что-то тебя насторожило - не обновляй и расскажи что"""
+            
+            print(f"{Colors.YELLOW}💡 Message for Eva (copy this):{Colors.RESET}")
+            print(f"{Colors.BLUE}╭{'─'*60}╮{Colors.RESET}")
+            for line in msg.split('\n'):
+                print(f"{Colors.BLUE}│{Colors.RESET} {line:<58} {Colors.BLUE}│{Colors.RESET}")
+            print(f"{Colors.BLUE}╰{'─'*60}╯{Colors.RESET}\n")
 
 if __name__ == "__main__":
     main()

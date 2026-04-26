@@ -42,17 +42,28 @@ ssh user@remote_host "uv run -" < check_versions.py
 
 ## Configuration
 
-Adding new tools is simple. Just append a new `AppConfig` block inside the `APPS` list in `check_versions.py`:
+Adding new tools is simple. Just append a new `AppConfig` block inside the `APPS` list in `check_versions.py`. The `AppConfig` supports flexible update strategies via several flags:
 
 ```python
     AppConfig(
         name="Your App",
         command=["app-command", "--version"],
-        github_repo="owner/repo"
+        github_repo="owner/repo",
+        
+        # Optional settings for update logic:
+        ignore_update=False,    # If True, shows the update in gray (Ignored) and skips any actions
+        auto_update=True,       # If True, prompts the user to automatically run the update command
+        update_cmd="npm update -g app", # The command to execute if auto_update is True
+        show_message=True       # If True, prints a prepared message at the end for Eva
     ),
 ```
 
-The script will automatically grab the terminal output, scrape the version via Regex, pull the latest release from the GitHub API, and compare them.
+### Update Logic Flags
+- **`ignore_update`**: Use this when you want to know an update exists but don't want to be prompted to install it. It simply marks the update as `(Ignored)`.
+- **`auto_update` & `update_cmd`**: If `auto_update` is set to `True` and an `update_cmd` is provided, the script will prompt you `Update Your App? [Y/n]` after checking all versions. Pressing Enter will run the command directly in your shell.
+- **`show_message`**: Specifically designed for AI assistants (like Eva). When an update is detected, it generates a convenient copy-paste block asking the assistant to check the changelog before proceeding with the update.
+
+The script will automatically grab the terminal output, scrape the version via Regex, pull the latest release from the GitHub API, compare them, and execute the configured logic.
 
 ## License
 

@@ -10,6 +10,7 @@ import requests
 import re
 import argparse
 import tomllib
+import time
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -55,6 +56,13 @@ class AppConfig:
 
 # List of applications to monitor. You can easily expand this list.
 APPS = [
+    AppConfig(
+        name="VersionCheck",
+        command=["uv", "run", "check_versions.py", "--version"],
+        github_repo="OleksiyM/versioncheck",
+        auto_update=True,
+        update_cmd="git pull origin main"
+    ),
     AppConfig(
         name="Qwen",
         command=["qwen", "--version"],
@@ -209,8 +217,10 @@ def main():
             if ans in ('', 'y', 'yes'):
                 print(f"⚙️  Updating {app.name}...")
                 try:
+                    start_time = time.time()
                     subprocess.run(app.update_cmd, shell=True, check=True)
-                    print(f"✅ {Colors.GREEN}Successfully updated {app.name}!{Colors.RESET}\n")
+                    duration = int(time.time() - start_time)
+                    print(f"✅ {Colors.GREEN}Successfully updated {app.name} in {duration} sec!{Colors.RESET}\n")
                 except subprocess.CalledProcessError:
                     print(f"❌ {Colors.RED}Failed to update {app.name}.{Colors.RESET}\n")
             else:

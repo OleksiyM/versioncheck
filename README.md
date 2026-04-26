@@ -9,6 +9,7 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 - **No Installation Required:** Leverages [`uv`](https://github.com/astral-sh/uv) to automatically manage dependencies in an ephemeral sandbox.
 - **Remote Execution Ready:** Can be piped over SSH to check versions on any remote machine without transferring files.
 - **Smart Parsing:** Uses regex to extract clean version numbers directly from standard terminal output commands and GitHub tags.
+- **Self-Updating:** Automatically monitors its own GitHub repository and updates itself (`git pull origin main`) when a new release is available!
 - **Compact & Visual:** Employs emojis and ANSI colors to highlight what actually requires your attention.
 
 ## Example Output

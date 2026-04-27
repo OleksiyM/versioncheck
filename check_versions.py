@@ -70,10 +70,10 @@ def get_script_version() -> str:
         if pyproject_path.exists():
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
-                return data.get("project", {}).get("version", "unknown")
+                return data.get("project", {}).get("version", "0.1.5")
     except Exception:
         pass
-    return "unknown"
+    return "0.1.5"
 
 @dataclass
 class AppConfig:
@@ -269,15 +269,9 @@ def main():
     for info in updates:
         app = info["app"]
         if app.show_message:
-            msg = f"""Эва, у {app.name} обновление: {info['local']} -> {info['github']}.
-
-Проверь что нового, есть ли блокеры все как обычно, если всё спокойно обнови {app.name}, если что-то тебя насторожило - не обновляй и расскажи что"""
-            
+            msg = f"Эва, у {app.name} обновление: {info['local']} -> {info['github']}. Проверь пожалуйста"
             cprint(f"{Colors.YELLOW}💡 Message for Eva (copy this):{Colors.RESET}")
-            cprint(f"{Colors.BLUE}╭{'─'*60}╮{Colors.RESET}")
-            for line in msg.split('\n'):
-                cprint(f"{Colors.BLUE}│{Colors.RESET} {line:<58} {Colors.BLUE}│{Colors.RESET}")
-            cprint(f"{Colors.BLUE}╰{'─'*60}╯{Colors.RESET}\n")
+            cprint(f"{Colors.BLUE}{msg}{Colors.RESET}\n")
 
 if __name__ == "__main__":
     main()

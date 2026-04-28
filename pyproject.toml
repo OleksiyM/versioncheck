@@ -1,6 +1,6 @@
 [project]
 name = "versioncheck"
-version = "0.1.5"
+version = "0.1.6"
 description = "A compact and elegant script to compare local CLI tool versions against the latest GitHub releases."
 readme = "README.md"
 requires-python = ">=3.11"

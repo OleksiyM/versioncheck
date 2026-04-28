@@ -70,10 +70,10 @@ def get_script_version() -> str:
         if pyproject_path.exists():
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
-                return data.get("project", {}).get("version", "0.1.5")
+                return data.get("project", {}).get("version", "0.1.6")
     except Exception:
         pass
-    return "0.1.5"
+    return "0.1.6"
 
 @dataclass
 class AppConfig:

@@ -18,15 +18,26 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ```text
 🔍 Checking software versions...
 ---------------------------------------------
-✔️ Qwen         : 0.14.5 (Up to date)
-❌ OpenClaw     : Command not found (openclaw)
-🚀 Gemini CLI   : 0.36.0 -> 0.38.2 (Update!)
-🚀 Claude Code  : 2.1.104 -> 2.1.114 (Update!)
+✔️ VersionCheck : 0.1.6 (Up to date)
+✔️ Qwen         : 0.14.5 -> 0.15.4 (Ignored)
+🚀 OpenClaw     : 2026.4.24 -> 2026.4.26 (Update!)
+🚀 Gemini CLI   : 0.39.1 -> 0.40.0 (Update!)
+✔️ Codex        : 0.125.0 (Up to date)
+🚀 Claude Code  : 2.1.121 -> 2.1.123 (Update!)
 ---------------------------------------------
 ```
 
 ## Installation
 
+### Classic (via Git)
+Clone the repository directly and run it:
+```bash
+git clone https://github.com/OleksiyM/versioncheck.git
+cd versioncheck
+uv run check_versions.py
+```
+
+### Direct Download
 Download the latest stable release from the [GitHub Releases page](https://github.com/OleksiyM/versioncheck/releases). Extract the archive, and you are ready to go!
 
 ## Quickstart
@@ -45,6 +56,7 @@ uv run check_versions.py
 - `-h`, `--help`: Show the help message and exit.
 - `--version`: Display the current script version (dynamically read from `pyproject.toml`).
 - `-y`, `--yes`: Auto-approve all pending updates without prompting `[Y/n]`. Example: `uv run check_versions.py -y`
+- `-i`, `--info`: Show versions only, skip all updates and prompts. Example: `uv run check_versions.py -i`
 
 ### Remote Execution (via SSH)
 Execute the script entirely in RAM on your remote machine:

@@ -70,10 +70,10 @@ def get_script_version() -> str:
         if pyproject_path.exists():
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
-                return data.get("project", {}).get("version", "0.1.6")
+                return data.get("project", {}).get("version", "0.1.7")
     except Exception:
         pass
-    return "0.1.6"
+    return "0.1.7"
 
 @dataclass
 class AppConfig:
@@ -202,8 +202,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="A compact and elegant script to compare local CLI tool versions against the latest GitHub releases."
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {script_version}")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {script_version}", help="Show the version of this script and exit")
     parser.add_argument("-y", "--yes", action="store_true", help="Auto-approve all updates without prompting")
+    parser.add_argument("-i", "--info", action="store_true", help="Show versions only, skip all updates and prompts")
     args = parser.parse_args()
 
     cprint(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*45}{Colors.RESET}")
@@ -239,6 +240,9 @@ def main():
             })
 
     cprint(f"{Colors.GRAY}{'-' * 45}{Colors.RESET}\n")
+
+    if args.info:
+        return
 
     # Prompt to update apps that have auto_update enabled
     for info in updates:

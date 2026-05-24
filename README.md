@@ -9,6 +9,7 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 - **No Installation Required:** Leverages [`uv`](https://github.com/astral-sh/uv) to automatically manage dependencies in an ephemeral sandbox.
 - **Remote Execution Ready:** Can be piped over SSH to check versions on any remote machine without transferring files.
 - **Smart Parsing:** Uses regex to extract clean version numbers directly from standard terminal output commands and GitHub tags.
+- **Custom Version Sources:** Supports querying versions from custom API endpoints (e.g. auto-updater APIs) when standard GitHub Releases are not available.
 - **Self-Updating:** Automatically monitors its own GitHub repository and updates itself (`git pull origin main`) when a new release is available!
 - **Persistent Logging:** Silently records all status checks, prompts, and background app installation outputs into an ANSI-stripped, timestamped `logs/versioncheck.log` file.
 - **Compact & Visual:** Employs emojis and ANSI colors to highlight what actually requires your attention.
@@ -17,14 +18,17 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 
 ```text
 🔍 Checking software versions...
----------------------------------------------
-✔️ VersionCheck : 0.1.6 (Up to date)
-✔️ Qwen         : 0.14.5 -> 0.15.4 (Ignored)
-🚀 OpenClaw     : 2026.4.24 -> 2026.4.26 (Update!)
-🚀 Gemini CLI   : 0.39.1 -> 0.40.0 (Update!)
-✔️ Codex        : 0.125.0 (Up to date)
-🚀 Claude Code  : 2.1.121 -> 2.1.123 (Update!)
----------------------------------------------
+------------------------------------------------
+✔️  VersionCheck    : 0.1.8 (Up to date)
+✔️  Antigravity CLI : 1.0.2 (Up to date)
+✔️  Antigravity IDE : 2.0.3 (Up to date)
+🚀 OpenCode        : 1.15.6 -> 1.15.10 (Update!)
+✔️  Qwen            : 0.14.5 -> 0.16.1 (Ignored)
+🚀 OpenClaw        : 2026.5.7 -> 2026.5.22 (Update!)
+🚀 Gemini CLI      : 0.42.0 -> 0.43.0 (Update!)
+🚀 Codex           : 0.128.0 -> 0.133.0 (Update!)
+🚀 Claude Code     : 2.1.126 -> 2.1.150 (Update!)
+------------------------------------------------
 ```
 
 ## Installation
@@ -79,7 +83,8 @@ Adding new tools is simple. Just append a new `AppConfig` block inside the `APPS
         ignore_update=False,    # If True, shows the update in gray (Ignored) and skips any actions
         auto_update=True,       # If True, prompts the user to automatically run the update command
         update_cmd="npm update -g app", # The command to execute if auto_update is True
-        show_message=True       # If True, prints a prepared message at the end for Eva
+        show_message=True,      # If True, prints a prepared message at the end for Eva
+        version_url="https://api.example.com/version" # Custom URL to query version from instead of GitHub Releases
     ),
 ```
 
@@ -87,6 +92,7 @@ Adding new tools is simple. Just append a new `AppConfig` block inside the `APPS
 - **`ignore_update`**: Use this when you want to know an update exists but don't want to be prompted to install it. It simply marks the update as `(Ignored)`.
 - **`auto_update` & `update_cmd`**: If `auto_update` is set to `True` and an `update_cmd` is provided, the script will prompt you `Update Your App? [Y/n]` after checking all versions. Pressing Enter will run the command directly in your shell.
 - **`show_message`**: Specifically designed for AI assistants (like Eva). When an update is detected, it generates a convenient copy-paste block asking the assistant to check the changelog before proceeding with the update.
+- **`version_url`**: Useful for applications that do not release on GitHub or use their own private/public update channels. The script will fetch this URL and parse the version via Regex.
 
 The script will automatically grab the terminal output, scrape the version via Regex, pull the latest release from the GitHub API, compare them, and execute the configured logic.
 

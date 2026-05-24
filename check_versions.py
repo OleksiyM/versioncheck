@@ -11,6 +11,7 @@ import re
 import argparse
 import tomllib
 import time
+import json
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -70,10 +71,10 @@ def get_script_version() -> str:
         if pyproject_path.exists():
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
-                return data.get("project", {}).get("version", "0.1.7")
+                return data.get("project", {}).get("version", "0.1.8")
     except Exception:
         pass
-    return "0.1.7"
+    return "0.1.8"
 
 @dataclass
 class AppConfig:
@@ -89,15 +90,38 @@ class AppConfig:
     auto_update: bool = False       # If True, prompt to run the update command
     update_cmd: str = ""            # Command to run for updating the app
     show_message: bool = False      # If True, show the prepared message for Eva
+    version_url: str = ""           # Custom URL to fetch version from (instead of GitHub releases)
 
 # List of applications to monitor. You can easily expand this list.
 APPS = [
     AppConfig(
         name="VersionCheck",
-        command=["uv", "run", "check_versions.py", "--version"],
+        command=["uv", "run", str(Path(__file__).resolve()), "--version"],
         github_repo="OleksiyM/versioncheck",
         auto_update=True,
         update_cmd="git pull origin main"
+    ),
+    AppConfig(
+        name="Antigravity CLI",
+        command=["agy", "--version"],
+        github_repo="google-antigravity/antigravity-cli",
+        version_url="https://antigravity-cli-auto-updater-974169037036.us-central1.run.app",
+        auto_update=True,
+        update_cmd="agy update"
+    ),
+    AppConfig(
+        name="Antigravity IDE",
+        command=["agy-ide", "--version"],
+        github_repo="google-antigravity/antigravity-ide",
+        version_url="https://antigravity-ide-auto-updater-974169037036.us-central1.run.app",
+        ignore_update=True
+    ),
+    AppConfig(
+        name="OpenCode",
+        command=["opencode", "--version"],
+        github_repo="anomalyco/opencode",
+        auto_update=True,
+        update_cmd="opencode upgrade"
     ),
     AppConfig(
         name="Qwen",
@@ -134,6 +158,25 @@ APPS = [
 
 def get_local_version(app: AppConfig) -> Optional[str]:
     """Retrieves the local version of the application using its CLI command."""
+    if app.name == "Antigravity IDE":
+        # Custom logic to read internal ideVersion from product.json
+        paths = [
+            "/usr/share/antigravity-ide/resources/app/product.json",
+            "/Applications/Antigravity IDE.app/Contents/Resources/app/product.json",
+            str(Path.home() / "Applications/Antigravity IDE.app/Contents/Resources/app/product.json"),
+        ]
+        for p in paths:
+            path = Path(p)
+            if path.exists():
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        val = data.get("ideVersion")
+                        if val:
+                            return val
+                except Exception:
+                    pass
+
     try:
         result = subprocess.run(
             app.command, 
@@ -150,22 +193,22 @@ def get_local_version(app: AppConfig) -> Optional[str]:
         if match:
             return match.group(1)
         else:
-            cprint(f"❌ {app.name:<12} : Local version parse error")
+            cprint(f"❌ {app.name:<15} : Local version parse error")
             return None
             
     except FileNotFoundError:
-        cprint(f"❌ {app.name:<12} : Command not found ({app.command[0]})")
+        cprint(f"❌ {app.name:<15} : Command not found ({app.command[0]})")
         return None
     except subprocess.TimeoutExpired:
-        cprint(f"❌ {app.name:<12} : Local check timeout")
+        cprint(f"❌ {app.name:<15} : Local check timeout")
         return None
     except Exception as e:
-        cprint(f"❌ {app.name:<12} : Local check failed")
+        cprint(f"❌ {app.name:<15} : Local check failed")
         return None
 
 def get_github_version(app: AppConfig) -> Optional[str]:
-    """Retrieves the latest version of the application from GitHub Releases API."""
-    url = f"https://api.github.com/repos/{app.github_repo}/releases/latest"
+    """Retrieves the latest version of the application from GitHub Releases API or a custom URL."""
+    url = app.version_url if app.version_url else f"https://api.github.com/repos/{app.github_repo}/releases/latest"
     headers = {
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "VersionChecker-Script/1.0"
@@ -175,26 +218,38 @@ def get_github_version(app: AppConfig) -> Optional[str]:
         response = requests.get(url, headers=headers, timeout=TIMEOUT_SECONDS)
         
         if response.status_code == 404:
-            cprint(f"❌ {app.name:<12} : GitHub repo not found")
+            source_name = "Custom URL" if app.version_url else "GitHub repo"
+            cprint(f"❌ {app.name:<15} : {source_name} not found")
             return None
             
         response.raise_for_status()
-        data = response.json()
-        tag = data.get("tag_name", "")
         
-        # Parse the tag using regex to ensure we just compare numeric version parts
-        match = re.search(app.version_regex, tag)
-        if match:
-            return match.group(1)
+        if app.version_url:
+            # Custom parsing for raw text response
+            text = response.text
+            match = re.search(app.version_regex, text)
+            if match:
+                return match.group(1)
+            else:
+                cprint(f"❌ {app.name:<15} : Custom URL version parse error")
+                return None
         else:
-            cprint(f"❌ {app.name:<12} : GitHub version parse error")
-            return None
+            data = response.json()
+            tag = data.get("tag_name", "")
+            
+            # Parse the tag using regex to ensure we just compare numeric version parts
+            match = re.search(app.version_regex, tag)
+            if match:
+                return match.group(1)
+            else:
+                cprint(f"❌ {app.name:<15} : GitHub version parse error")
+                return None
             
     except requests.exceptions.Timeout:
-        cprint(f"❌ {app.name:<12} : GitHub API timeout")
+        cprint(f"❌ {app.name:<15} : API/URL request timeout")
         return None
     except requests.exceptions.RequestException as e:
-        cprint(f"❌ {app.name:<12} : GitHub API request failed")
+        cprint(f"❌ {app.name:<15} : API/URL request failed")
         return None
 
 def main():
@@ -207,7 +262,7 @@ def main():
     parser.add_argument("-i", "--info", action="store_true", help="Show versions only, skip all updates and prompts")
     args = parser.parse_args()
 
-    cprint(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*45}{Colors.RESET}")
+    cprint(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*48}{Colors.RESET}")
     
     # Store apps that have updates as a list of dicts
     updates = []
@@ -224,22 +279,22 @@ def main():
             
         if local_version == github_version:
             # Gray text for up-to-date
-            cprint(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
+            cprint(f"✔️  {app.name:<15} : {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
         else:
             if app.ignore_update:
                 # Show the update exists, but mark as ignored and skip further actions
-                cprint(f"✔️  {app.name:<12} : {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
+                cprint(f"✔️  {app.name:<15} : {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
                 continue
                 
             # Green text for new available version
-            cprint(f"🚀 {app.name:<12} : {local_version} -> {Colors.GREEN}{github_version} (Update!){Colors.RESET}")
+            cprint(f"🚀 {app.name:<15} : {local_version} -> {Colors.GREEN}{github_version} (Update!){Colors.RESET}")
             updates.append({
                 "app": app,
                 "local": local_version,
                 "github": github_version
             })
 
-    cprint(f"{Colors.GRAY}{'-' * 45}{Colors.RESET}\n")
+    cprint(f"{Colors.GRAY}{'-' * 48}{Colors.RESET}\n")
 
     if args.info:
         return

@@ -13,22 +13,31 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 - **Self-Updating:** Automatically monitors its own GitHub repository and updates itself (`git pull origin main`) when a new release is available!
 - **Persistent Logging:** Silently records all status checks, prompts, and background app installation outputs into an ANSI-stripped, timestamped `logs/versioncheck.log` file.
 - **Compact & Visual:** Employs emojis and ANSI colors to highlight what actually requires your attention.
+- **Compact Mode (Telegram/EvaClaw):** Provides a specialized, narrow, non-aligned format (`-c` or `--compact`) specifically designed to look beautiful in Telegram messaging and AI execution blocks.
 
 ## Example Output
 
+### Desktop Mode
 ```text
 🔍 Checking software versions...
 ------------------------------------------------
-✔️  VersionCheck    : 0.1.8 (Up to date)
-✔️  Antigravity CLI : 1.0.2 (Up to date)
-✔️  Antigravity IDE : 2.0.3 (Up to date)
-🚀 OpenCode        : 1.15.6 -> 1.15.10 (Update!)
-✔️  Qwen            : 0.14.5 -> 0.16.1 (Ignored)
-🚀 OpenClaw        : 2026.5.7 -> 2026.5.22 (Update!)
-🚀 Gemini CLI      : 0.42.0 -> 0.43.0 (Update!)
-🚀 Codex           : 0.128.0 -> 0.133.0 (Update!)
-🚀 Claude Code     : 2.1.126 -> 2.1.150 (Update!)
-------------------------------------------------
+✔️  VersionCheck    : 0.1.9 (Up to date)
+✔️  Antigravity CLI : 1.0.16 (Up to date)
+✔️  Antigravity IDE : 2.1.1 (Up to date)
+✔️  Antigravity 2   : 2.2.1 (Up to date)
+🚀  OpenCode        : 1.15.12 -> 1.17.13
+✔️  Qwen            : 0.14.5 -> 0.19.6 (Ignored)
+```
+
+### Compact Mode (`-c` / `--compact`)
+```text
+🔍 Checking versions...
+✔️ VersionCheck › 0.1.9
+✔️ agy CLI › 1.0.16
+✔️ agy IDE › 2.1.1
+✔️ agy 2 › 2.2.1
+🆙 OpenCode › 1.15.12->1.17.13
+✔️ Qwen › 0.14.5->0.19.6 (Ign)
 ```
 
 ## Installation
@@ -61,6 +70,7 @@ uv run check_versions.py
 - `--version`: Display the current script version (dynamically read from `pyproject.toml`).
 - `-y`, `--yes`: Auto-approve all pending updates without prompting `[Y/n]`. Example: `uv run check_versions.py -y`
 - `-i`, `--info`: Show versions only, skip all updates and prompts. Example: `uv run check_versions.py -i`
+- `-c`, `--compact`: Render layout in a compact format without spacing alignment (ideal for Telegram/EvaClaw). Example: `uv run check_versions.py -c -i`
 
 ### Remote Execution (via SSH)
 Execute the script entirely in RAM on your remote machine:

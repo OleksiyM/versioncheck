@@ -5,6 +5,7 @@
 # ]
 # ///
 
+import sys
 import subprocess
 import requests
 import re
@@ -91,6 +92,7 @@ class AppConfig:
     update_cmd: str = ""            # Command to run for updating the app
     show_message: bool = False      # If True, show the prepared message for Eva
     version_url: str = ""           # Custom URL to fetch version from (instead of GitHub releases)
+    short_name: str = ""            # Short name for compact/Telegram layout
 
 # List of applications to monitor. You can easily expand this list.
 APPS = [
@@ -103,6 +105,7 @@ APPS = [
     ),
     AppConfig(
         name="Antigravity CLI",
+        short_name="agy CLI",
         command=["agy", "--version"],
         github_repo="google-antigravity/antigravity-cli",
         version_url="https://antigravity-cli-auto-updater-974169037036.us-central1.run.app",
@@ -111,9 +114,19 @@ APPS = [
     ),
     AppConfig(
         name="Antigravity IDE",
+        short_name="agy IDE",
         command=["agy-ide", "--version"],
         github_repo="google-antigravity/antigravity-ide",
         version_url="https://antigravity-ide-auto-updater-974169037036.us-central1.run.app",
+        ignore_update=True
+    ),
+    AppConfig(
+        name="Antigravity 2",
+        short_name="agy 2",
+        command=[],  # No direct version command, custom parser reads app.asar
+        github_repo="",
+        version_url="https://antigravity-hub-auto-updater-974169037036.us-central1.run.app/manifest/latest-x64-linux.yml",
+        version_regex=r"version:\s*(\d+\.\d+(?:\.\d+[a-zA-Z0-9\-]*)?)",
         ignore_update=True
     ),
     AppConfig(
@@ -136,11 +149,6 @@ APPS = [
         show_message=True
     ),
     AppConfig(
-        name="Gemini CLI",
-        command=["gemini", "--version"],
-        github_repo="google-gemini/gemini-cli"
-    ),
-    AppConfig(
         name="Codex",
         command=["codex", "--version"],
         github_repo="openai/codex",
@@ -159,11 +167,17 @@ APPS = [
 def get_local_version(app: AppConfig) -> Optional[str]:
     """Retrieves the local version of the application using its CLI command."""
     if app.name == "Antigravity IDE":
-        # Custom logic to read internal ideVersion from product.json
+        # Custom logic to read internal version from package.json or product.json
+        # Prefer product.json ideVersion because that's what the update server reports (e.g. 2.1.1)
         paths = [
             "/usr/share/antigravity-ide/resources/app/product.json",
+            "/usr/share/antigravity-ide/resources/app/package.json",
             "/Applications/Antigravity IDE.app/Contents/Resources/app/product.json",
+            "/Applications/Antigravity IDE.app/Contents/Resources/app/package.json",
+            str(Path.home() / "Applications/AntigravityIDE/resources/app/product.json"),
+            str(Path.home() / "Applications/AntigravityIDE/resources/app/package.json"),
             str(Path.home() / "Applications/Antigravity IDE.app/Contents/Resources/app/product.json"),
+            str(Path.home() / "Applications/Antigravity IDE.app/Contents/Resources/app/package.json"),
         ]
         for p in paths:
             path = Path(p)
@@ -171,11 +185,51 @@ def get_local_version(app: AppConfig) -> Optional[str]:
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        val = data.get("ideVersion")
+                        # Prefer ideVersion first (from product.json) so it yields 2.1.1, else fallback to version
+                        val = data.get("ideVersion") or data.get("version")
                         if val:
                             return val
                 except Exception:
                     pass
+
+    if app.name == "Antigravity 2":
+        # Custom logic to extract version from app.asar binary
+        paths = [
+            "/usr/share/antigravity/resources/app.asar",
+            "/Applications/Antigravity.app/Contents/Resources/app.asar",
+            str(Path.home() / "Applications/Antigravity/resources/app.asar"),
+            str(Path.home() / "Applications/Antigravity.app/Contents/Resources/app.asar"),
+        ]
+        for p in paths:
+            path = Path(p)
+            if path.exists():
+                try:
+                    # The main package.json is usually stored in the file data payload (farther in the file),
+                    # not the header, because package.json is packaged as a file.
+                    # Reading the whole file is safe as it's around 170MB, but to be fast and memory efficient,
+                    # we can search for the byte sequence of the package.json content.
+                    with open(path, "rb") as f:
+                        data = f.read()
+                    
+                    # Look for the exact byte block of package.json:
+                    # "name": "antigravity" and "version": "..."
+                    # Find instances of b'"version"'
+                    idx = 0
+                    while True:
+                        idx = data.find(b'"version"', idx)
+                        if idx == -1:
+                            break
+                        # Read 300 bytes around it and check if it's the main package.json
+                        chunk = data[idx:idx+300].decode("utf-8", errors="ignore")
+                        if "antigravity" in chunk and "description" in chunk:
+                            # Extract version
+                            match = re.search(r'"version"\s*:\s*"([^"]+)"', chunk)
+                            if match:
+                                return match.group(1)
+                        idx += 9
+                except Exception:
+                    pass
+        return None
 
     try:
         result = subprocess.run(
@@ -193,17 +247,29 @@ def get_local_version(app: AppConfig) -> Optional[str]:
         if match:
             return match.group(1)
         else:
-            cprint(f"❌ {app.name:<15} : Local version parse error")
+            if "--compact" in sys.argv or "-c" in sys.argv:
+                cprint(f"❌ {app.short_name or app.name} › parse error")
+            else:
+                cprint(f"❌ {app.name:<15} : Local version parse error")
             return None
             
     except FileNotFoundError:
-        cprint(f"❌ {app.name:<15} : Command not found ({app.command[0]})")
+        if "--compact" in sys.argv or "-c" in sys.argv:
+            cprint(f"❌ {app.short_name or app.name} › not found")
+        else:
+            cprint(f"❌ {app.name:<15} : Command not found ({app.command[0]})")
         return None
     except subprocess.TimeoutExpired:
-        cprint(f"❌ {app.name:<15} : Local check timeout")
+        if "--compact" in sys.argv or "-c" in sys.argv:
+            cprint(f"❌ {app.short_name or app.name} › timeout")
+        else:
+            cprint(f"❌ {app.name:<15} : Local check timeout")
         return None
     except Exception as e:
-        cprint(f"❌ {app.name:<15} : Local check failed")
+        if "--compact" in sys.argv or "-c" in sys.argv:
+            cprint(f"❌ {app.short_name or app.name} › failed")
+        else:
+            cprint(f"❌ {app.name:<15} : Local check failed")
         return None
 
 def get_github_version(app: AppConfig) -> Optional[str]:
@@ -219,7 +285,10 @@ def get_github_version(app: AppConfig) -> Optional[str]:
         
         if response.status_code == 404:
             source_name = "Custom URL" if app.version_url else "GitHub repo"
-            cprint(f"❌ {app.name:<15} : {source_name} not found")
+            if "--compact" in sys.argv or "-c" in sys.argv:
+                cprint(f"❌ {app.short_name or app.name} › not found")
+            else:
+                cprint(f"❌ {app.name:<15} : {source_name} not found")
             return None
             
         response.raise_for_status()
@@ -231,7 +300,10 @@ def get_github_version(app: AppConfig) -> Optional[str]:
             if match:
                 return match.group(1)
             else:
-                cprint(f"❌ {app.name:<15} : Custom URL version parse error")
+                if "--compact" in sys.argv or "-c" in sys.argv:
+                    cprint(f"❌ {app.short_name or app.name} › parse error")
+                else:
+                    cprint(f"❌ {app.name:<15} : Custom URL version parse error")
                 return None
         else:
             data = response.json()
@@ -242,14 +314,23 @@ def get_github_version(app: AppConfig) -> Optional[str]:
             if match:
                 return match.group(1)
             else:
-                cprint(f"❌ {app.name:<15} : GitHub version parse error")
+                if "--compact" in sys.argv or "-c" in sys.argv:
+                    cprint(f"❌ {app.short_name or app.name} › parse error")
+                else:
+                    cprint(f"❌ {app.name:<15} : GitHub version parse error")
                 return None
             
     except requests.exceptions.Timeout:
-        cprint(f"❌ {app.name:<15} : API/URL request timeout")
+        if "--compact" in sys.argv or "-c" in sys.argv:
+            cprint(f"❌ {app.short_name or app.name} › API timeout")
+        else:
+            cprint(f"❌ {app.name:<15} : API/URL request timeout")
         return None
     except requests.exceptions.RequestException as e:
-        cprint(f"❌ {app.name:<15} : API/URL request failed")
+        if "--compact" in sys.argv or "-c" in sys.argv:
+            cprint(f"❌ {app.short_name or app.name} › API error")
+        else:
+            cprint(f"❌ {app.name:<15} : API/URL request failed")
         return None
 
 def main():
@@ -260,9 +341,18 @@ def main():
     parser.add_argument("--version", action="version", version=f"%(prog)s {script_version}", help="Show the version of this script and exit")
     parser.add_argument("-y", "--yes", action="store_true", help="Auto-approve all updates without prompting")
     parser.add_argument("-i", "--info", action="store_true", help="Show versions only, skip all updates and prompts")
+    parser.add_argument("-c", "--compact", action="store_true", help="Compact output format (ideal for Telegram/EvaClaw)")
     args = parser.parse_args()
 
-    cprint(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*48}{Colors.RESET}")
+    # Configure styling based on compact mode
+    # "✔️  VersionCheck    : 0.1.8 (Up to " -> 15 chars for name, 2 chars for emoji, 2 spaces, colon, spaces.
+    # Total width target is around 32-35 chars
+    name_w = 12 if args.compact else 15
+
+    if not args.compact:
+        cprint(f"\n{Colors.BOLD}🔍 Checking software versions...{Colors.RESET}\n{Colors.GRAY}{'-'*48}{Colors.RESET}")
+    else:
+        cprint(f"{Colors.BOLD}🔍 Checking versions...{Colors.RESET}")
     
     # Store apps that have updates as a list of dicts
     updates = []
@@ -277,24 +367,45 @@ def main():
         if not github_version:
             continue
             
-        if local_version == github_version:
-            # Gray text for up-to-date
-            cprint(f"✔️  {app.name:<15} : {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
-        else:
-            if app.ignore_update:
-                # Show the update exists, but mark as ignored and skip further actions
-                cprint(f"✔️  {app.name:<15} : {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
-                continue
-                
-            # Green text for new available version
-            cprint(f"🚀 {app.name:<15} : {local_version} -> {Colors.GREEN}{github_version} (Update!){Colors.RESET}")
+        # Determine name to display based on compact flag
+        app_name = app.short_name if (args.compact and app.short_name) else app.name
+
+        if args.compact:
+            # Compact rendering: No alignment spaces, single emoji space, streamlined output
+            if local_version == github_version:
+                cprint(f"✔️ {app_name} › {Colors.GRAY}{local_version}{Colors.RESET}")
+            else:
+                if app.ignore_update:
+                    cprint(f"✔️ {app_name} › {Colors.GRAY}{local_version}->{github_version} (Ign){Colors.RESET}")
+                else:
+                    cprint(f"🆙 {app_name} › {local_version}->{Colors.GREEN}{github_version}{Colors.RESET}")
             updates.append({
                 "app": app,
                 "local": local_version,
                 "github": github_version
-            })
+            }) if not (local_version == github_version or app.ignore_update) else None
+        else:
+            # Normal desktop rendering
+            sep = " :"
+            if local_version == github_version:
+                # Gray text for up-to-date
+                cprint(f"✔️  {app_name:<15}{sep} {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
+            else:
+                if app.ignore_update:
+                    # Show the update exists, but mark as ignored and skip further actions
+                    cprint(f"✔️  {app_name:<15}{sep} {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
+                    continue
+                    
+                # Green text for new available version
+                cprint(f"🚀  {app_name:<15}{sep} {local_version} -> {Colors.GREEN}{github_version}{Colors.RESET}")
+                updates.append({
+                    "app": app,
+                    "local": local_version,
+                    "github": github_version
+                })
 
-    cprint(f"{Colors.GRAY}{'-' * 48}{Colors.RESET}\n")
+    if not args.compact:
+        cprint(f"{Colors.GRAY}{'-' * 48}{Colors.RESET}\n")
 
     if args.info:
         return

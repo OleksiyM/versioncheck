@@ -72,10 +72,10 @@ def get_script_version() -> str:
         if pyproject_path.exists():
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
-                return data.get("project", {}).get("version", "0.1.8")
+                return data.get("project", {}).get("version", "0.2.0")
     except Exception:
         pass
-    return "0.1.8"
+    return "0.2.0"
 
 @dataclass
 class AppConfig:
@@ -161,6 +161,14 @@ APPS = [
         github_repo="anthropics/claude-code",
         auto_update=True,
         update_cmd="claude update"
+    ),
+    AppConfig(
+        name="Grok",
+        command=["grok", "--version"],
+        github_repo="xai-org/grok-build",
+        version_url="https://x.ai/cli/stable",
+        auto_update=True,
+        update_cmd="curl -fsSL https://x.ai/cli/install.sh | bash"
     ),
 ]
 

@@ -1,5 +1,8 @@
 # VersionCheck Memory 🧠
 
+## v0.2.0 (2026-07-20)
+- **Grok Build CLI (`grok`)**: Добавлена проверка версии Grok через официальный API `https://x.ai/cli/stable` и обновление через официальный install-скрипт (`curl -fsSL https://x.ai/cli/install.sh | bash`).
+
 ## v0.1.8 (2026-05-24)
 - **Antigravity CLI (`agy`)**: Добавлена проверка версий через официальный эндпоинт авто-апдейтера и автоматическое обновление через `agy update`.
 - **Antigravity IDE (`agy-ide`)**: Интегрирована проверка версии. Локальная версия считывается из файла `product.json` (`ideVersion`), удаленная — с угаданного нами API авто-апдейтера. Выставлен режим `ignore_update=True` для ручного обновления на Linux.

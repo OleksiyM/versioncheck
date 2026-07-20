@@ -77,6 +77,16 @@ def get_script_version() -> str:
         pass
     return "0.2.0"
 
+def parse_version(v_str: str) -> tuple:
+    """Parses a version string into a tuple of integers/strings for comparison."""
+    parts = []
+    for part in re.split(r'[\.\-]', v_str):
+        if part.isdigit():
+            parts.append(int(part))
+        else:
+            parts.append(part)
+    return tuple(parts)
+
 @dataclass
 class AppConfig:
     """Configuration for an application to check."""
@@ -380,7 +390,7 @@ def main():
 
         if args.compact:
             # Compact rendering: No alignment spaces, single emoji space, streamlined output
-            if local_version == github_version:
+            if parse_version(local_version) >= parse_version(github_version):
                 cprint(f"✔️ {app_name} › {Colors.GRAY}{local_version}{Colors.RESET}")
             else:
                 if app.ignore_update:
@@ -391,11 +401,11 @@ def main():
                 "app": app,
                 "local": local_version,
                 "github": github_version
-            }) if not (local_version == github_version or app.ignore_update) else None
+            }) if not (parse_version(local_version) >= parse_version(github_version) or app.ignore_update) else None
         else:
             # Normal desktop rendering
             sep = " :"
-            if local_version == github_version:
+            if parse_version(local_version) >= parse_version(github_version):
                 # Gray text for up-to-date
                 cprint(f"✔️  {app_name:<15}{sep} {Colors.GRAY}{local_version} (Up to date){Colors.RESET}")
             else:

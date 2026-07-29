@@ -1,5 +1,8 @@
 # VersionCheck Memory 🧠
 
+## v0.2.1 (2026-07-29)
+- **Ignored Status Visuals**: Заменен эмодзи `✔️` на `⏸️` (Pause) для пропущенных/игнорируемых обновлений (`ignore_update`), чтобы визуально отличать актуальное состояние от отложенного обновления.
+
 ## v0.2.0 (2026-07-20)
 - **Grok Build CLI (`grok`)**: Добавлена проверка версии Grok через официальный API `https://x.ai/cli/stable` и обновление через официальный install-скрипт (`curl -fsSL https://x.ai/cli/install.sh | bash`).
 

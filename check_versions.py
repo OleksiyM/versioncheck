@@ -72,10 +72,10 @@ def get_script_version() -> str:
         if pyproject_path.exists():
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
-                return data.get("project", {}).get("version", "0.2.0")
+                return data.get("project", {}).get("version", "0.2.1")
     except Exception:
         pass
-    return "0.2.0"
+    return "0.2.1"
 
 def parse_version(v_str: str) -> tuple:
     """Parses a version string into a tuple of integers/strings for comparison."""
@@ -394,7 +394,7 @@ def main():
                 cprint(f"✔️ {app_name} › {Colors.GRAY}{local_version}{Colors.RESET}")
             else:
                 if app.ignore_update:
-                    cprint(f"✔️ {app_name} › {Colors.GRAY}{local_version}->{github_version} (Ign){Colors.RESET}")
+                    cprint(f"⏸️ {app_name} › {Colors.GRAY}{local_version}->{github_version} (Ign){Colors.RESET}")
                 else:
                     cprint(f"🆙 {app_name} › {local_version}->{Colors.GREEN}{github_version}{Colors.RESET}")
             updates.append({
@@ -411,7 +411,7 @@ def main():
             else:
                 if app.ignore_update:
                     # Show the update exists, but mark as ignored and skip further actions
-                    cprint(f"✔️  {app_name:<15}{sep} {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
+                    cprint(f"⏸️  {app_name:<15}{sep} {Colors.GRAY}{local_version} -> {github_version} (Ignored){Colors.RESET}")
                     continue
                     
                 # Green text for new available version

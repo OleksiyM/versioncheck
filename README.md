@@ -21,7 +21,7 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ```text
 🔍 Checking software versions...
 ------------------------------------------------
-✔️  VersionCheck    : 0.2.3 (Up to date)
+✔️  VersionCheck    : 0.2.4 (Up to date)
 ✔️  Antigravity CLI : 1.2.6 (Up to date)
 ✔️  Antigravity IDE : 2.5.5 (Up to date)
 ⏸️  Antigravity 2   : 2.14.0 -> 2.15.0 (Ignored)
@@ -38,7 +38,7 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ### Compact Mode (`-c` / `--compact`)
 ```text
 🔍 Checking versions...
-✔️ VersionCheck › 0.2.3
+✔️ VersionCheck › 0.2.4
 ✔️ agy CLI › 1.2.6
 ✔️ agy IDE › 2.5.5
 ⏸️ agy 2 › 2.14.0->2.15.0 (Ign)

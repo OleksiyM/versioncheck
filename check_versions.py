@@ -297,6 +297,12 @@ def get_local_version(app: AppConfig) -> Optional[str]:
                     pass
         return None
 
+    if not app.command:
+        return None
+
+    if not shutil.which(app.command[0]):
+        return None
+
     try:
         result = subprocess.run(
             app.command, 
@@ -320,10 +326,6 @@ def get_local_version(app: AppConfig) -> Optional[str]:
             return None
             
     except FileNotFoundError:
-        if "--compact" in sys.argv or "-c" in sys.argv:
-            cprint(f"❌ {app.short_name or app.name} › not found")
-        else:
-            cprint(f"❌ {app.name:<15} : Command not found ({app.command[0]})")
         return None
     except subprocess.TimeoutExpired:
         if "--compact" in sys.argv or "-c" in sys.argv:

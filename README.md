@@ -21,23 +21,34 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ```text
 🔍 Checking software versions...
 ------------------------------------------------
-✔️  VersionCheck    : 0.1.9 (Up to date)
-✔️  Antigravity CLI : 1.0.16 (Up to date)
-✔️  Antigravity IDE : 2.1.1 (Up to date)
-✔️  Antigravity 2   : 2.2.1 (Up to date)
-🚀  OpenCode        : 1.15.12 -> 1.17.13
-✔️  Qwen            : 0.14.5 -> 0.19.6 (Ignored)
+✔️  VersionCheck    : 0.2.2 (Up to date)
+✔️  Antigravity CLI : 1.2.6 (Up to date)
+✔️  Antigravity IDE : 2.5.5 (Up to date)
+⏸️  Antigravity 2   : 2.14.0 -> 2.15.0 (Ignored)
+✔️  OpenCode        : 1.18.31 (Up to date)
+⏸️  Qwen            : 0.20.0 -> 0.24.0 (Ignored)
+🚀  OpenClaw        : 2026.6.11 -> 2026.9.4
+✔️  Codex           : 0.155.0 (Up to date)
+🚀  Claude Code     : 2.1.276 -> 2.1.277
+✔️  Grok            : 1.0.34 (Up to date)
+✔️  LocalSend       : 1.18.2 (Up to date)
+------------------------------------------------
 ```
 
 ### Compact Mode (`-c` / `--compact`)
 ```text
 🔍 Checking versions...
-✔️ VersionCheck › 0.1.9
-✔️ agy CLI › 1.0.16
-✔️ agy IDE › 2.1.1
-✔️ agy 2 › 2.2.1
-🆙 OpenCode › 1.15.12->1.17.13
-✔️ Qwen › 0.14.5->0.19.6 (Ign)
+✔️ VersionCheck › 0.2.2
+✔️ agy CLI › 1.2.6
+✔️ agy IDE › 2.5.5
+⏸️ agy 2 › 2.14.0->2.15.0 (Ign)
+✔️ OpenCode › 1.18.31
+⏸️ Qwen › 0.20.0->0.24.0 (Ign)
+🆙 OpenClaw › 2026.6.11->2026.9.4
+✔️ Codex › 0.155.0
+🆙 Claude Code › 2.1.276->2.1.277
+✔️ Grok › 1.0.34
+✔️ LocalSend › 1.18.2
 ```
 
 ## Installation
@@ -86,6 +97,7 @@ Adding new tools is simple. Just append a new `AppConfig` block inside the `APPS
 ```python
     AppConfig(
         name="Your App",
+        short_name="App",       # Optional short alias for compact layout (-c / Telegram)
         command=["app-command", "--version"],
         github_repo="owner/repo",
         
@@ -98,7 +110,8 @@ Adding new tools is simple. Just append a new `AppConfig` block inside the `APPS
     ),
 ```
 
-### Update Logic Flags
+### Configuration & Update Flags
+- **`short_name`**: Short alias used in compact mode (`-c` / `--compact`) to keep message lines short and clean in Telegram/EvaClaw (e.g. `agy CLI` instead of `Antigravity CLI`).
 - **`ignore_update`**: Use this when you want to know an update exists but don't want to be prompted to install it. It simply marks the update as `(Ignored)`.
 - **`auto_update` & `update_cmd`**: If `auto_update` is set to `True` and an `update_cmd` is provided, the script will prompt you `Update Your App? [Y/n]` after checking all versions. Pressing Enter will run the command directly in your shell.
 - **`show_message`**: Specifically designed for AI assistants (like Eva). When an update is detected, it generates a convenient copy-paste block asking the assistant to check the changelog before proceeding with the update.

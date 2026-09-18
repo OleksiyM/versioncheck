@@ -6,6 +6,8 @@
 # ///
 
 import sys
+import os
+import platform
 import subprocess
 import requests
 import re
@@ -13,6 +15,10 @@ import argparse
 import tomllib
 import time
 import json
+import tarfile
+import shutil
+import tempfile
+import plistlib
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -180,6 +186,13 @@ APPS = [
         auto_update=True,
         update_cmd="curl -fsSL https://x.ai/cli/install.sh | bash"
     ),
+    AppConfig(
+        name="LocalSend",
+        command=[],
+        github_repo="localsend/localsend",
+        auto_update=True,
+        update_cmd=f'"{sys.executable}" "{Path(__file__).resolve()}" --update-localsend'
+    ),
 ]
 
 def get_local_version(app: AppConfig) -> Optional[str]:
@@ -245,6 +258,41 @@ def get_local_version(app: AppConfig) -> Optional[str]:
                             if match:
                                 return match.group(1)
                         idx += 9
+                except Exception:
+                    pass
+        return None
+
+    if app.name == "LocalSend":
+        # macOS Info.plist paths
+        mac_paths = [
+            Path("/Applications/LocalSend.app/Contents/Info.plist"),
+            Path.home() / "Applications/LocalSend.app/Contents/Info.plist",
+        ]
+        for p in mac_paths:
+            if p.exists():
+                try:
+                    with open(p, "rb") as f:
+                        data = plistlib.load(f)
+                        val = data.get("CFBundleShortVersionString") or data.get("CFBundleVersion")
+                        if val:
+                            return str(val)
+                except Exception:
+                    pass
+
+        # Linux / portable paths
+        linux_paths = [
+            Path.home() / "Applications/LocalSend/data/flutter_assets/version.json",
+            Path("/opt/LocalSend/data/flutter_assets/version.json"),
+            Path("/usr/share/localsend/data/flutter_assets/version.json"),
+        ]
+        for p in linux_paths:
+            if p.exists():
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        val = data.get("version")
+                        if val:
+                            return str(val)
                 except Exception:
                     pass
         return None
@@ -351,6 +399,123 @@ def get_github_version(app: AppConfig) -> Optional[str]:
             cprint(f"❌ {app.name:<15} : API/URL request failed")
         return None
 
+def update_localsend():
+    """Cross-platform updater for LocalSend (Linux & macOS)."""
+    current_os = platform.system().lower()
+    
+    print("🔍 Fetching latest LocalSend release info from GitHub...")
+    resp = requests.get(
+        "https://api.github.com/repos/localsend/localsend/releases/latest",
+        headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "VersionChecker/1.0"},
+        timeout=TIMEOUT_SECONDS
+    )
+    resp.raise_for_status()
+    release_data = resp.json()
+    assets = release_data.get("assets", [])
+    
+    if current_os == "darwin":
+        # Check if installed via Homebrew first
+        brew_check = subprocess.run(["brew", "list", "--cask", "localsend"], capture_output=True, text=True)
+        if brew_check.returncode == 0:
+            print("📦 Updating LocalSend via Homebrew Cask...")
+            subprocess.run(["brew", "upgrade", "--cask", "localsend"], check=True)
+            return
+
+        # Standalone .dmg update on macOS
+        dmg_url = None
+        for asset in assets:
+            name = asset.get("name", "")
+            if name.endswith(".dmg") and "CLI" not in name:
+                dmg_url = asset.get("browser_download_url")
+                break
+        
+        if not dmg_url:
+            raise RuntimeError("Could not find LocalSend .dmg in latest GitHub release.")
+        
+        print(f"⬇️ Downloading {dmg_url}...")
+        with tempfile.NamedTemporaryFile(suffix=".dmg", delete=False) as tmp_file:
+            tmp_dmg = tmp_file.name
+            with requests.get(dmg_url, stream=True, timeout=60) as r:
+                r.raise_for_status()
+                for chunk in r.iter_content(chunk_size=8192):
+                    tmp_file.write(chunk)
+        
+        try:
+            print("🛑 Closing running LocalSend...")
+            subprocess.run(["pkill", "-x", "LocalSend"], capture_output=True)
+            time.sleep(1)
+            
+            mount_point = tempfile.mkdtemp(prefix="localsend_mount_")
+            print("💿 Mounting DMG...")
+            subprocess.run(["hdiutil", "attach", tmp_dmg, "-mountpoint", mount_point, "-nobrowse", "-quiet"], check=True)
+            try:
+                src_app = Path(mount_point) / "LocalSend.app"
+                target_dir = Path("/Applications") if os.access("/Applications", os.W_OK) else (Path.home() / "Applications")
+                target_app = target_dir / "LocalSend.app"
+                print(f"📂 Installing to {target_app}...")
+                if target_app.exists():
+                    shutil.rmtree(target_app)
+                shutil.copytree(src_app, target_app)
+            finally:
+                subprocess.run(["hdiutil", "detach", mount_point, "-quiet"], check=True)
+                shutil.rmtree(mount_point, ignore_errors=True)
+        finally:
+            if os.path.exists(tmp_dmg):
+                os.remove(tmp_dmg)
+                
+    elif current_os == "linux":
+        arch = platform.machine().lower()
+        tar_url = None
+        arch_keyword = "arm-64" if "arm" in arch or "aarch64" in arch else "x86-64"
+        for asset in assets:
+            name = asset.get("name", "")
+            if name.endswith(".tar.gz") and arch_keyword in name and "CLI" not in name:
+                tar_url = asset.get("browser_download_url")
+                break
+        
+        if not tar_url:
+            for asset in assets:
+                name = asset.get("name", "")
+                if "linux" in name and name.endswith(".tar.gz") and "CLI" not in name:
+                    tar_url = asset.get("browser_download_url")
+                    break
+
+        if not tar_url:
+            raise RuntimeError("Could not find LocalSend tar.gz for Linux in latest release.")
+
+        print(f"⬇️ Downloading {tar_url}...")
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp_file:
+            tmp_tar = tmp_file.name
+            with requests.get(tar_url, stream=True, timeout=60) as r:
+                r.raise_for_status()
+                for chunk in r.iter_content(chunk_size=8192):
+                    tmp_file.write(chunk)
+
+        try:
+            print("🛑 Closing running LocalSend...")
+            subprocess.run(["pkill", "-x", "localsend_app"], capture_output=True)
+            time.sleep(1)
+
+            install_dir = Path.home() / "Applications/LocalSend"
+            install_dir.mkdir(parents=True, exist_ok=True)
+            print(f"📦 Extracting to {install_dir}...")
+            with tarfile.open(tmp_tar, "r:gz") as tar:
+                try:
+                    tar.extractall(path=install_dir, filter='data')
+                except TypeError:
+                    tar.extractall(path=install_dir)
+
+            app_bin = install_dir / "localsend_app"
+            if app_bin.exists():
+                os.chmod(app_bin, 0o755)
+        finally:
+            if os.path.exists(tmp_tar):
+                os.remove(tmp_tar)
+    else:
+        raise RuntimeError(f"Unsupported OS for LocalSend auto-update: {current_os}")
+        
+    print("✅ LocalSend update completed successfully!")
+
 def main():
     script_version = get_script_version()
     parser = argparse.ArgumentParser(
@@ -360,7 +525,12 @@ def main():
     parser.add_argument("-y", "--yes", action="store_true", help="Auto-approve all updates without prompting")
     parser.add_argument("-i", "--info", action="store_true", help="Show versions only, skip all updates and prompts")
     parser.add_argument("-c", "--compact", action="store_true", help="Compact output format (ideal for Telegram/EvaClaw)")
+    parser.add_argument("--update-localsend", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
+
+    if args.update_localsend:
+        update_localsend()
+        return
 
     # Configure styling based on compact mode
     # "✔️  VersionCheck    : 0.1.8 (Up to " -> 15 chars for name, 2 chars for emoji, 2 spaces, colon, spaces.

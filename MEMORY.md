@@ -1,5 +1,8 @@
 # VersionCheck Memory 🧠
 
+## v0.2.2 (2026-09-18)
+- **LocalSend**: Добавлена кроссплатформенная поддержка LocalSend (`localsend/localsend`) для Linux и macOS. Локальная версия считывается напрямую из `version.json` (Linux) или `Info.plist` (macOS). Встроен монолитный кроссплатформенный апдейтер прямо в `check_versions.py` (без внешних shell-скриптов): поддержка tar.gz/chmod на Linux, Homebrew Cask / DMG mount на macOS.
+
 ## v0.2.1 (2026-07-29)
 - **Ignored Status Visuals**: Заменен эмодзи `✔️` на `⏸️` (Pause) для пропущенных/игнорируемых обновлений (`ignore_update`), чтобы визуально отличать актуальное состояние от отложенного обновления.
 

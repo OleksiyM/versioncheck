@@ -2,6 +2,7 @@
 
 ## v0.2.2 (2026-09-18)
 - **LocalSend**: Добавлена кроссплатформенная поддержка LocalSend (`localsend/localsend`) для Linux и macOS. Локальная версия считывается напрямую из `version.json` (Linux) или `Info.plist` (macOS). Встроен монолитный кроссплатформенный апдейтер прямо в `check_versions.py` (без внешних shell-скриптов): поддержка tar.gz/chmod на Linux, Homebrew Cask / DMG mount на macOS.
+- **GitHub Token Auto-Detection**: Автоматическое использование `GITHUB_TOKEN`/`GH_TOKEN` или токена из `gh auth token` для увеличения лимита запросов GitHub API с 60 до 5000 в час (защита от HTTP 403 Rate Limit).
 
 ## v0.2.1 (2026-07-29)
 - **Ignored Status Visuals**: Заменен эмодзи `✔️` на `⏸️` (Pause) для пропущенных/игнорируемых обновлений (`ignore_update`), чтобы визуально отличать актуальное состояние от отложенного обновления.

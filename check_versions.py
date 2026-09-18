@@ -338,6 +338,26 @@ def get_local_version(app: AppConfig) -> Optional[str]:
             cprint(f"❌ {app.name:<15} : Local check failed")
         return None
 
+_GITHUB_TOKEN = None
+_TOKEN_CHECKED = False
+
+def get_github_token() -> Optional[str]:
+    """Retrieves GitHub token from env or gh CLI to avoid API rate limits."""
+    global _GITHUB_TOKEN, _TOKEN_CHECKED
+    if not _TOKEN_CHECKED:
+        _TOKEN_CHECKED = True
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if token:
+            _GITHUB_TOKEN = token
+        else:
+            try:
+                res = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=2)
+                if res.returncode == 0 and res.stdout.strip():
+                    _GITHUB_TOKEN = res.stdout.strip()
+            except Exception:
+                pass
+    return _GITHUB_TOKEN
+
 def get_github_version(app: AppConfig) -> Optional[str]:
     """Retrieves the latest version of the application from GitHub Releases API or a custom URL."""
     url = app.version_url if app.version_url else f"https://api.github.com/repos/{app.github_repo}/releases/latest"
@@ -345,6 +365,9 @@ def get_github_version(app: AppConfig) -> Optional[str]:
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "VersionChecker-Script/1.0"
     }
+    token = get_github_token()
+    if token and not app.version_url:
+        headers["Authorization"] = f"Bearer {token}"
     
     try:
         response = requests.get(url, headers=headers, timeout=TIMEOUT_SECONDS)

@@ -169,7 +169,7 @@ APPS = [
         command=["codex", "--version"],
         github_repo="openai/codex",
         auto_update=True,
-        update_cmd="npm install -g @openai/codex"
+        update_cmd="codex update"
     ),
     AppConfig(
         name="Claude Code",

@@ -21,16 +21,16 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ```text
 🔍 Checking software versions...
 ------------------------------------------------
-✔️  VersionCheck    : 0.2.5 (Up to date)
-✔️  Antigravity CLI : 1.2.6 (Up to date)
+✔️  VersionCheck    : 0.2.6 (Up to date)
+✔️  Antigravity CLI : 1.3.0 (Up to date)
 ✔️  Antigravity IDE : 2.5.5 (Up to date)
-⏸️  Antigravity 2   : 2.14.0 -> 2.15.0 (Ignored)
-✔️  OpenCode        : 1.18.31 (Up to date)
-⏸️  Qwen            : 0.20.0 -> 0.24.0 (Ignored)
-🚀  OpenClaw        : 2026.6.11 -> 2026.9.4
-✔️  Codex           : 0.155.0 (Up to date)
-🚀  Claude Code     : 2.1.276 -> 2.1.277
-✔️  Grok            : 1.0.34 (Up to date)
+✔️  Antigravity 2   : 2.19.1 (Up to date)
+✔️  OpenCode        : 1.18.34 (Up to date)
+⏸️  Qwen            : 0.20.0 -> 0.25.0 (Ignored)
+🚀  OpenClaw        : 2026.6.11 -> 2026.9.8
+✔️  Codex           : 0.160.1 (Up to date)
+✔️  Claude Code     : 2.1.291 (Up to date)
+✔️  Grok            : 1.0.46 (Up to date)
 ✔️  LocalSend       : 1.18.2 (Up to date)
 ------------------------------------------------
 ```
@@ -38,16 +38,16 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ### Compact Mode (`-c` / `--compact`)
 ```text
 🔍 Checking versions...
-✔️ VersionCheck › 0.2.5
-✔️ agy CLI › 1.2.6
+✔️ VersionCheck › 0.2.6
+✔️ agy CLI › 1.3.0
 ✔️ agy IDE › 2.5.5
-⏸️ agy 2 › 2.14.0->2.15.0 (Ign)
-✔️ OpenCode › 1.18.31
-⏸️ Qwen › 0.20.0->0.24.0 (Ign)
-🆙 OpenClaw › 2026.6.11->2026.9.4
-✔️ Codex › 0.155.0
-🆙 Claude Code › 2.1.276->2.1.277
-✔️ Grok › 1.0.34
+✔️ agy 2 › 2.19.1
+✔️ OpenCode › 1.18.34
+⏸️ Qwen › 0.20.0->0.25.0 (Ign)
+🆙 OpenClaw › 2026.6.11->2026.9.8
+✔️ Codex › 0.160.1
+✔️ Claude Code › 2.1.291
+✔️ Grok › 1.0.46
 ✔️ LocalSend › 1.18.2
 ```
 

@@ -101,6 +101,7 @@ class AppConfig:
     github_repo: str
     # Regex to extract the version number (e.g., matching "0.14.5" from "v0.14.5")
     version_regex: str = r"(\d+\.\d+(?:\.\d+[a-zA-Z0-9\-]*)?)"
+    remote_version_regex: str = ""  # Optional regex specifically for parsing remote version
     
     # Update logic settings
     ignore_update: bool = False     # If True, ignore updates for this app
@@ -156,6 +157,8 @@ APPS = [
         name="Qwen",
         command=["qwen", "--version"],
         github_repo="QwenLM/qwen-code",
+        version_url="https://registry.npmjs.org/@qwen-code/qwen-code/latest",
+        remote_version_regex=r'"version"\s*:\s*"([^"]+)"',
         ignore_update=True
     ),
     AppConfig(
@@ -363,8 +366,9 @@ def get_github_token() -> Optional[str]:
 def get_github_version(app: AppConfig) -> Optional[str]:
     """Retrieves the latest version of the application from GitHub Releases API or a custom URL."""
     url = app.version_url if app.version_url else f"https://api.github.com/repos/{app.github_repo}/releases/latest"
+    accept_header = "application/json, text/plain, */*" if app.version_url else "application/vnd.github.v3+json"
     headers = {
-        "Accept": "application/vnd.github.v3+json",
+        "Accept": accept_header,
         "User-Agent": "VersionChecker-Script/1.0"
     }
     token = get_github_token()
@@ -384,10 +388,11 @@ def get_github_version(app: AppConfig) -> Optional[str]:
             
         response.raise_for_status()
         
+        regex = app.remote_version_regex or app.version_regex
         if app.version_url:
             # Custom parsing for raw text response
             text = response.text
-            match = re.search(app.version_regex, text)
+            match = re.search(regex, text)
             if match:
                 return match.group(1)
             else:
@@ -401,7 +406,7 @@ def get_github_version(app: AppConfig) -> Optional[str]:
             tag = data.get("tag_name", "")
             
             # Parse the tag using regex to ensure we just compare numeric version parts
-            match = re.search(app.version_regex, tag)
+            match = re.search(regex, tag)
             if match:
                 return match.group(1)
             else:

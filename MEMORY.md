@@ -1,5 +1,9 @@
 # VersionCheck Memory 🧠
 
+## v0.2.6 (2026-10-06)
+- **Qwen Version Source Fix & npm Registry Support**: Источник проверки версии Qwen переведён на npm registry (`@qwen-code/qwen-code/latest`), так как в монорепозитории `QwenLM/qwen-code` сторонние релизы (например, TypeScript SDK `sdk-typescript-v...`) перетирали `/releases/latest`, из-за чего скрипт ошибочно считал локальную версию актуальной и не показывал статус `⏸️ (Ignored)`.
+- **Remote Version Regex & Custom Headers**: Добавлено поле `remote_version_regex` в `AppConfig` для разделения парсинга локального вывода CLI и удаленного API (JSON), а также скорректирован заголовок `Accept` при запросах к `version_url` (поддержка стандартных JSON API без ограничений GitHub API).
+
 ## v0.2.5 (2026-09-29)
 - **Codex Native Updater**: Команда обновления Codex переведена с устаревшего `npm install -g @openai/codex` на встроенный нативный CLI-апдейтер `codex update` в связи с переходом OpenAI на standalone-бинарники.
 

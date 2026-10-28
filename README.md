@@ -21,34 +21,34 @@ A lightweight, elegant python script to quickly monitor installed CLI tools and 
 ```text
 🔍 Checking software versions...
 ------------------------------------------------
-✔️  VersionCheck    : 0.2.6 (Up to date)
-✔️  Antigravity CLI : 1.3.0 (Up to date)
-✔️  Antigravity IDE : 2.5.5 (Up to date)
-✔️  Antigravity 2   : 2.19.1 (Up to date)
-✔️  OpenCode        : 1.18.34 (Up to date)
-⏸️  Qwen            : 0.20.0 -> 0.25.0 (Ignored)
-🚀  OpenClaw        : 2026.6.11 -> 2026.9.8
-✔️  Codex           : 0.160.1 (Up to date)
-✔️  Claude Code     : 2.1.291 (Up to date)
-✔️  Grok            : 1.0.46 (Up to date)
+✔️  VersionCheck    : 0.2.7 (Up to date)
+✔️  Antigravity CLI : 1.4.9 (Up to date)
+✔️  Antigravity IDE : 2.6.0 (Up to date)
+✔️  Antigravity 2   : 2.28.0 (Up to date)
+✔️  Grok            : 1.0.70 (Up to date)
 ✔️  LocalSend       : 1.18.2 (Up to date)
+✔️  OpenCode        : 2.2.0 (Up to date)
+✔️  Codex           : 0.165.0 (Up to date)
+✔️  Claude Code     : 2.1.312 (Up to date)
+🚀  OpenClaw        : 2026.6.11 -> 2026.10.8
+⏸️  Qwen            : 0.20.0 -> 0.26.3 (Ignored)
 ------------------------------------------------
 ```
 
 ### Compact Mode (`-c` / `--compact`)
 ```text
 🔍 Checking versions...
-✔️ VersionCheck › 0.2.6
-✔️ agy CLI › 1.3.0
-✔️ agy IDE › 2.5.5
-✔️ agy 2 › 2.19.1
-✔️ OpenCode › 1.18.34
-⏸️ Qwen › 0.20.0->0.25.0 (Ign)
-🆙 OpenClaw › 2026.6.11->2026.9.8
-✔️ Codex › 0.160.1
-✔️ Claude Code › 2.1.291
-✔️ Grok › 1.0.46
+✔️ VersionCheck › 0.2.7
+✔️ agy CLI › 1.4.9
+✔️ agy IDE › 2.6.0
+✔️ agy 2 › 2.28.0
+✔️ Grok › 1.0.70
 ✔️ LocalSend › 1.18.2
+✔️ OpenCode › 2.2.0
+✔️ Codex › 0.165.0
+✔️ Claude Code › 2.1.312
+🆙 OpenClaw › 2026.6.11->2026.10.8
+⏸️ Qwen › 0.20.0->0.26.3 (Ign)
 ```
 
 ## Installation

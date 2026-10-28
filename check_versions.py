@@ -147,25 +147,26 @@ APPS = [
         ignore_update=True
     ),
     AppConfig(
+        name="Grok",
+        command=["grok", "--version"],
+        github_repo="xai-org/grok-build",
+        version_url="https://x.ai/cli/stable",
+        auto_update=True,
+        update_cmd="curl -fsSL https://x.ai/cli/install.sh | bash"
+    ),
+    AppConfig(
+        name="LocalSend",
+        command=[],
+        github_repo="localsend/localsend",
+        auto_update=True,
+        update_cmd=f'"{sys.executable}" "{Path(__file__).resolve()}" --update-localsend'
+    ),
+    AppConfig(
         name="OpenCode",
         command=["opencode", "--version"],
         github_repo="anomalyco/opencode",
         auto_update=True,
         update_cmd="opencode upgrade"
-    ),
-    AppConfig(
-        name="Qwen",
-        command=["qwen", "--version"],
-        github_repo="QwenLM/qwen-code",
-        version_url="https://registry.npmjs.org/@qwen-code/qwen-code/latest",
-        remote_version_regex=r'"version"\s*:\s*"([^"]+)"',
-        ignore_update=True
-    ),
-    AppConfig(
-        name="OpenClaw",
-        command=["openclaw", "--version"],
-        github_repo="openclaw/openclaw",
-        show_message=True
     ),
     AppConfig(
         name="Codex",
@@ -182,19 +183,18 @@ APPS = [
         update_cmd="claude update"
     ),
     AppConfig(
-        name="Grok",
-        command=["grok", "--version"],
-        github_repo="xai-org/grok-build",
-        version_url="https://x.ai/cli/stable",
-        auto_update=True,
-        update_cmd="curl -fsSL https://x.ai/cli/install.sh | bash"
+        name="OpenClaw",
+        command=["openclaw", "--version"],
+        github_repo="openclaw/openclaw",
+        show_message=True
     ),
     AppConfig(
-        name="LocalSend",
-        command=[],
-        github_repo="localsend/localsend",
-        auto_update=True,
-        update_cmd=f'"{sys.executable}" "{Path(__file__).resolve()}" --update-localsend'
+        name="Qwen",
+        command=["qwen", "--version"],
+        github_repo="QwenLM/qwen-code",
+        version_url="https://registry.npmjs.org/@qwen-code/qwen-code/latest",
+        remote_version_regex=r'"version"\s*:\s*"([^"]+)"',
+        ignore_update=True
     ),
 ]
 

@@ -1,5 +1,8 @@
 # VersionCheck Memory 🧠
 
+## v0.2.7 (2026-10-28)
+- **Logical Apps Ordering**: Список отслеживаемых программ логически упорядочен по смысловым категориям: внутренняя экосистема Antigravity (VersionCheck, Antigravity CLI, Antigravity IDE, Antigravity 2), системные утилиты (Grok, LocalSend) и консольные AI-агенты кодинга (OpenCode, Codex, Claude Code, OpenClaw, Qwen).
+
 ## v0.2.6 (2026-10-06)
 - **Qwen Version Source Fix & npm Registry Support**: Источник проверки версии Qwen переведён на npm registry (`@qwen-code/qwen-code/latest`), так как в монорепозитории `QwenLM/qwen-code` сторонние релизы (например, TypeScript SDK `sdk-typescript-v...`) перетирали `/releases/latest`, из-за чего скрипт ошибочно считал локальную версию актуальной и не показывал статус `⏸️ (Ignored)`.
 - **Remote Version Regex & Custom Headers**: Добавлено поле `remote_version_regex` в `AppConfig` для разделения парсинга локального вывода CLI и удаленного API (JSON), а также скорректирован заголовок `Accept` при запросах к `version_url` (поддержка стандартных JSON API без ограничений GitHub API).
